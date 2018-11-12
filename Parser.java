@@ -1,3 +1,4 @@
+import javax.sound.midi.Soundbank;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -9,8 +10,9 @@ import java.util.regex.Pattern;
 public class Parser {
     public HashMap<String, HashMap<String, Object>> data = new HashMap<String, HashMap<String, Object>>();
     private BufferedReader file;
-    private Pattern _section = Pattern.compile("\\s*\\[([0-9a-zA-z_]+)\\]\\s*");
-    private Pattern _keyValue = Pattern.compile("\\s*([0-9a-zA-Z_]+) = ([0-9a-zA-Z/\\.]+).*");
+    private Pattern _section = Pattern.compile("^\\[([0-9a-zA-z_]+)\\]\\s*");
+    private Pattern _keyValue = Pattern.compile("^([0-9a-zA-Z_]+) = ([0-9a-zA-Z/\\.]+).*");
+    private Pattern _comments = Pattern.compile("^;.*");
 
     Parser() {
     }
@@ -44,12 +46,15 @@ public class Parser {
             while ((line = this.file.readLine()) != null) {
                 Matcher sectionmatcher = _section.matcher(line);
                 Matcher keyvaluematcher = _keyValue.matcher(line);
+                Matcher comments = _comments.matcher(line);
                 if (sectionmatcher.find()) {
                     section = sectionmatcher.group(1);
                     hashMap.put(section, new HashMap<String, Object>());
-                }
-                if (keyvaluematcher.find()) {
+                } else if (keyvaluematcher.find()) {
                     hashMap.get(section).put(keyvaluematcher.group(1), this.parseValue(keyvaluematcher.group(2)));
+                } else if (!comments.find()){
+                    System.out.println("Wrong type of file");
+                    return null;
                 }
             }
         } catch (IOException ex) {
